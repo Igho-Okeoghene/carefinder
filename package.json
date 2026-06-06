@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@jest/globals": "^30.4.1",
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
-    "@testing-library/react": "^16.3.2",
     "@uiw/react-md-editor": "^4.1.1",
     "dompurify": "^3.4.7",
+    "lucide-react": "^1.17.0",
     "mapbox-gl": "^3.24.0",
-    "next": "16.2.7",
+    "next": "^9.3.3",
     "papaparse": "^5.5.3",
     "playwright": "^1.60.0",
     "react": "19.2.4",
@@ -24,17 +26,24 @@
     "react-map-gl": "^8.1.1",
     "react-markdown": "^10.1.0",
     "resend": "^6.12.4",
-    "vitest": "^4.1.8",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.19.41",
+    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/ui": "^4.1.8",
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.8"
   }
 }
