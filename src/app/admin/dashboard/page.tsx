@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Hospital, Review } from '@/types'
 import MDEditor from '@uiw/react-md-editor'
-import { Plus, Edit, Trash2, Eye, EyeOff, LogOut } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, EyeOff, LogOut, Star, AlertCircle } from 'lucide-react'
+import { hospitalFormSchema } from '@/lib/validation'
+import { ZodError, ZodIssue } from 'zod'
 
 export default function AdminDashboard() {
   const [hospitals, setHospitals] = useState<Hospital[]>([])
@@ -13,6 +15,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [editingHospital, setEditingHospital] = useState<Hospital | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -84,43 +87,60 @@ export default function AdminDashboard() {
   }
 
   const handleSubmit = async () => {
-    const hospitalData: any = {
-      name: formData.name,
-      slug: formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      address: formData.address,
-      city: formData.city,
-      lga: formData.lga,
-      coordinates: `POINT(${formData.lng} ${formData.lat})`,
-      phone: formData.phone,
-      email: formData.email || null,
-      specialties: formData.specialties,
-      ownership_type: formData.ownership_type,
-      visiting_hours: formData.visiting_hours || null,
-      description: formData.description || null,
-    }
+    // Clear previous errors
+    setValidationErrors({})
 
-    let error
-    if (editingHospital) {
-      const { error: updateError } = await supabase
-        .from('hospitals')
-        .update(hospitalData)
-        .eq('id', editingHospital.id)
-      error = updateError
-    } else {
-      const { error: insertError } = await supabase
-        .from('hospitals')
-        .insert([hospitalData])
-      error = insertError
-    }
+    // Validate with Zod
+    try {
+      const validatedData = hospitalFormSchema.parse(formData)
+      
+      const hospitalData: any = {
+        name: validatedData.name,
+        slug: validatedData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        address: validatedData.address,
+        city: validatedData.city,
+        lga: validatedData.lga,
+        coordinates: `POINT(${validatedData.lng} ${validatedData.lat})`,
+        phone: validatedData.phone,
+        email: validatedData.email || null,
+        specialties: validatedData.specialties,
+        ownership_type: validatedData.ownership_type,
+        visiting_hours: validatedData.visiting_hours || null,
+        description: validatedData.description || null,
+      }
 
-    if (error) {
-      console.error('Error saving hospital:', error)
-      alert('Failed to save hospital')
-    } else {
-      await fetchData()
-      setShowForm(false)
-      setEditingHospital(null)
-      resetForm()
+      let error
+      if (editingHospital) {
+        const { error: updateError } = await supabase
+          .from('hospitals')
+          .update(hospitalData)
+          .eq('id', editingHospital.id)
+        error = updateError
+      } else {
+        const { error: insertError } = await supabase
+          .from('hospitals')
+          .insert([hospitalData])
+        error = insertError
+      }
+
+      if (error) {
+        console.error('Error saving hospital:', error)
+        alert('Failed to save hospital')
+      } else {
+        await fetchData()
+        setShowForm(false)
+        setEditingHospital(null)
+        resetForm()
+      }
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const errors: Record<string, string> = {}
+        error.issues.forEach((issue: ZodIssue) => {
+          const path = issue.path.join('.')
+          errors[path] = issue.message
+        })
+        setValidationErrors(errors)
+      }
     }
   }
 
@@ -193,6 +213,7 @@ export default function AdminDashboard() {
                 setShowForm(true)
                 setEditingHospital(null)
                 resetForm()
+                setValidationErrors({})
               }}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
             >
@@ -326,16 +347,35 @@ export default function AdminDashboard() {
               <h2 className="text-2xl font-semibold mb-4">
                 {editingHospital ? 'Edit Hospital' : 'Add New Hospital'}
               </h2>
+
+              {Object.keys(validationErrors).length > 0 && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex gap-2 items-start">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-red-800 mb-2">Validation Errors</h3>
+                      <ul className="space-y-1 text-sm text-red-700">
+                        {Object.entries(validationErrors).map(([field, error]) => (
+                          <li key={field}>• {error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name {validationErrors.name && <span className="text-red-600">*</span>}
+                  </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    required
+                    className={`w-full px-3 py-2 border rounded-lg ${
+                      validationErrors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                    }`}
                   />
                 </div>
 
