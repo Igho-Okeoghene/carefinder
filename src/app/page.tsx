@@ -11,6 +11,7 @@ import EmailShare from "../components/Share/EmailShare";
 import { Hospital, SearchFilters } from "@/types";
 import { Activity } from "lucide-react";
 
+
 export default function Home() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,13 +43,32 @@ export default function Home() {
     }
 
     // Radius search using PostGIS
-    if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
-      query = query.rpc("hospitals_within_radius", {
-        lat: searchFilters.lat,
-        lng: searchFilters.lng,
-        radius_km: searchFilters.radius,
-      });
-    }
+    
+if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
+  // Call the RPC function with correct parameter names
+  const { data: radiusData, error: radiusError } = await supabase
+    .rpc('hospitals_within_radius', {
+      center_lng: searchFilters.lng,  // Note: center_lng not lng
+      center_lat: searchFilters.lat,  // Note: center_lat not lat
+      radius_meters: searchFilters.radius * 1000  // Convert km to meters
+    });
+  
+  if (radiusError) {
+    console.error('Radius search error:', radiusError);
+  } else {
+    // Transform coordinates for radius results
+    const transformedData = radiusData?.map((hospital: any) => ({
+      ...hospital,
+      coordinates: {
+        lat: hospital.coordinates?.coordinates?.[1] || 0,
+        lng: hospital.coordinates?.coordinates?.[0] || 0,
+      },
+    })) || [];
+    setHospitals(transformedData);
+    setLoading(false);
+    return; // Exit early since we already set hospitals
+  }
+}
 
     const { data, error } = await query;
 
@@ -57,11 +77,11 @@ export default function Home() {
     } else {
       // Transform coordinates from PostGIS format
       const transformedData =
-        data?.map((hospital) => ({
+        data?.map((hospital: any) => ({
           ...hospital,
           coordinates: {
-            lat: hospital.coordinates.coordinates[1],
-            lng: hospital.coordinates.coordinates[0],
+            lat: hospital.coordinates?.coordinates?.[1] || 0,
+            lng: hospital.coordinates?.coordinates?.[0] || 0,
           },
         })) || [];
       setHospitals(transformedData);
@@ -98,9 +118,9 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+    useEffect(() => {
     fetchHospitals(filters);
-  }, []);
+  }, [fetchHospitals, filters]);
 
   return (
     <div className="min-h-screen bg-gray-50">
