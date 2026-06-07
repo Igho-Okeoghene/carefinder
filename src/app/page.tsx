@@ -10,6 +10,7 @@ import ShareLink from "../components/Share/ShareLink";
 import EmailShare from "../components/Share/EmailShare";
 import { Hospital, SearchFilters } from "@/types";
 import { Activity } from "lucide-react";
+import { useCallback } from 'react';
 
 
 export default function Home() {
@@ -19,7 +20,7 @@ export default function Home() {
   const [isLocating, setIsLocating] = useState(false);
   const supabase = createClient();
 
-  const fetchHospitals = async (searchFilters: SearchFilters) => {
+  const fetchHospitals = useCallback(async (searchFilters: SearchFilters) => {
     setLoading(true);
     let query = supabase.from("hospitals").select("*");
 
@@ -87,7 +88,7 @@ if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
       setHospitals(transformedData);
     }
     setLoading(false);
-  };
+  }, [supabase]);
 
   const handleUseMyLocation = () => {
     setIsLocating(true);
@@ -120,7 +121,9 @@ if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
 
     useEffect(() => {
     fetchHospitals(filters);
-  }, [fetchHospitals, filters]);
+  }, []);
+
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
