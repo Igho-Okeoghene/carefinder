@@ -82,9 +82,9 @@ Carefinder is a civic health tool that helps Nigerians find, export, and share h
 | Role-Based Auth | ✅ Complete | Supabase Auth + RLS policies enforced |
 | Markdown Editor | ✅ Complete | react-md-editor for descriptions and hours |
 | Ratings & Reviews | ✅ Complete | 1-5 stars, moderation, user-only submissions |
-| Form Validation | ⚠️ Partial | HTML `required` + JS checks in place; **Zod schemas needed** |
-| Image Uploads | ❌ Not Implemented | **Supabase Storage integration needed** |
-| Admin Invite System | ❌ Not Implemented | **Supabase Edge Functions needed for secure invite flow** |
+| Form Validation | ✅ Complete | Zod schemas implemented (`src/lib/validation.ts`) |
+| Image Uploads | ✅ Implemented | Supabase Storage helpers + UI component (`src/lib/supabase/storage.ts`, `src/components/ImageUpload.tsx`) |
+| Admin Invite System | ⚠️ Partial | Types present (`admin_invites` in `src/types/supabase.ts`); invite flow not implemented |
 
 ---
 
