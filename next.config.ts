@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
         hostname: "*.supabase.co", // For Supabase storage images
       },
     ],
+    
   },
 
   // TypeScript type checking during build

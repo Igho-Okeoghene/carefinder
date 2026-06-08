@@ -26,31 +26,63 @@ export default function HospitalDetail() {
 
   useEffect(() => {
     const fetchHospital = async () => {
+      // Ensure slug exists
+      const slug = params.slug as string;
+      if (!slug) {
+        setLoading(false);
+        return;
+      }
+
+      // Fetch hospital
       const { data: hospitalData } = await supabase
         .from("hospitals")
         .select("*")
-        .eq("slug", params.slug)
+        .eq("slug", slug)
         .single();
 
       if (hospitalData) {
+        // Safely transform coordinates with type checking
+        let lat = 0, lng = 0;
+        if (hospitalData.coordinates && typeof hospitalData.coordinates === 'object') {
+          if ('coordinates' in hospitalData.coordinates && Array.isArray(hospitalData.coordinates.coordinates)) {
+            lng = hospitalData.coordinates.coordinates[0] || 0;
+            lat = hospitalData.coordinates.coordinates[1] || 0;
+          }
+        }
+        
         setHospital({
           ...hospitalData,
-          coordinates: {
-            lat: hospitalData.coordinates.coordinates[1],
-            lng: hospitalData.coordinates.coordinates[0],
-          },
-        });
-      }
+          coordinates: { lat, lng },
+          // Ensure specialties is always an array
+          specialties: hospitalData.specialties || [],
+          // Ensure ratings have defaults
+          rating_avg: hospitalData.rating_avg || 0,
+          rating_count: hospitalData.rating_count || 0,
+        } as Hospital);
 
-      const { data: reviewsData } = await supabase
-        .from("reviews")
-        .select("*")
-        .eq("hospital_id", hospitalData?.id)
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false });
+        // Fetch reviews only if we have a hospital ID
+        if (hospitalData.id) {
+          const { data: reviewsData } = await supabase
+            .from("reviews")
+            .select("*")
+            .eq("hospital_id", hospitalData.id)
+            .eq("is_approved", true)
+            .order("created_at", { ascending: false });
 
-      if (reviewsData) {
-        setReviews(reviewsData);
+          if (reviewsData) {
+            // Transform reviews to match Review type
+            const transformedReviews = reviewsData.map((review: any) => ({
+              ...review,
+              hospital_id: review.hospital_id || '',
+              user_id: review.user_id || '',
+              rating: review.rating || 0,
+              comment: review.review_text || review.comment || '',
+              created_at: review.created_at || new Date().toISOString(),
+              updated_at: review.updated_at || new Date().toISOString(),
+            }));
+            setReviews(transformedReviews);
+          }
+        }
       }
 
       setLoading(false);
@@ -103,10 +135,10 @@ export default function HospitalDetail() {
                 <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded">
                   <Star className="w-5 h-5 text-yellow-500 fill-current" />
                   <span className="font-semibold">
-                    {hospital.rating_avg.toFixed(1)}
+                    {hospital.rating_avg?.toFixed(1) || '0.0'}
                   </span>
                   <span className="text-gray-500">
-                    ({hospital.rating_count} reviews)
+                    ({hospital.rating_count || 0} reviews)
                   </span>
                 </div>
               </div>
@@ -154,15 +186,17 @@ export default function HospitalDetail() {
                     <Clock className="w-5 h-5 mt-0.5" />
                     <div>
                       <p className="font-semibold">Visiting Hours:</p>
-                      <ReactMarkdown className="prose">
-                        {hospital.visiting_hours}
-                      </ReactMarkdown>
+                      <div className="prose max-w-none">
+                        <ReactMarkdown>
+                          {hospital.visiting_hours}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
-              {hospital.specialties.length > 0 && (
+              {hospital.specialties && hospital.specialties.length > 0 && (
                 <div className="mt-4 pt-4 border-t">
                   <h3 className="font-semibold mb-2">Specialties</h3>
                   <div className="flex flex-wrap gap-2">
@@ -182,9 +216,9 @@ export default function HospitalDetail() {
             {hospital.description && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold mb-4">About</h2>
-                <ReactMarkdown className="prose max-w-none">
-                  {hospital.description}
-                </ReactMarkdown>
+                <div className="prose max-w-none">
+                  <ReactMarkdown>{hospital.description}</ReactMarkdown>
+                </div>
               </div>
             )}
 
@@ -216,8 +250,8 @@ export default function HospitalDetail() {
                           {new Date(review.created_at).toLocaleDateString()}
                         </span>
                       </div>
-                      {review.review_text && (
-                        <p className="text-gray-700">{review.review_text}</p>
+                      {(review as any).review_text && (
+                        <p className="text-gray-700">{(review as any).review_text}</p>
                       )}
                     </div>
                   ))}
@@ -231,7 +265,6 @@ export default function HospitalDetail() {
             <RatingWidget
               hospitalId={hospital.id}
               onRatingSubmitted={() => {
-                // Refresh reviews and hospital rating
                 window.location.reload();
               }}
             />
@@ -243,6 +276,9 @@ export default function HospitalDetail() {
                   src={`https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/pin-s+hospital+FF0000(${hospital.coordinates.lng},${hospital.coordinates.lat})/${hospital.coordinates.lng},${hospital.coordinates.lat},15/400x300?access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`}
                   alt="Hospital location"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/400x300?text=Map+Unavailable';
+                  }}
                 />
               </div>
             </div>

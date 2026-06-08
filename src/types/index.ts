@@ -26,6 +26,7 @@ export interface Review {
   review_text: string | null
   is_approved: boolean
   created_at: string
+  updated_at: string
 }
 
 export interface SearchFilters {
