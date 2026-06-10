@@ -9,7 +9,7 @@ import CSVExport from "../components/Export/CSVExport";
 import ShareLink from "../components/Share/ShareLink";
 import EmailShare from "../components/Share/EmailShare";
 import { Hospital, SearchFilters } from "@/types";
-import { Activity } from "lucide-react";
+import Logo from "@/components/Logo";
 import { useCallback } from 'react';
 
 
@@ -131,12 +131,7 @@ if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Activity className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-800">
-                Carefinder Nigeria
-              </h1>
-            </div>
+            <Logo />
             <div className="flex gap-3">
               <CSVExport
                 hospitals={hospitals}
