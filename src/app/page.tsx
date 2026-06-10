@@ -11,6 +11,8 @@ import EmailShare from "../components/Share/EmailShare";
 import { Hospital, SearchFilters } from "@/types";
 import Logo from "@/components/Logo";
 import { useCallback } from 'react';
+import Link from 'next/link'
+import { UserCircle, LogIn, UserPlus } from 'lucide-react'
 
 
 export default function Home() {
@@ -127,22 +129,45 @@ if (searchFilters.radius && searchFilters.lat && searchFilters.lng) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex justify-between items-center">
-            <Logo />
-            <div className="flex gap-3">
-              <CSVExport
-                hospitals={hospitals}
-                searchQuery={filters.query || "all"}
-              />
-              <ShareLink filters={filters} />
-              <EmailShare hospitals={hospitals} />
-            </div>
+       {/* Header */}
+    <header className="bg-white shadow-sm border-b">
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center">
+          {/* Logo Section */}
+          <Logo />
+          
+          {/* Right Side - All Buttons */}
+          <div className="flex items-center gap-3">
+            {/* Export/Share Buttons */}
+            <CSVExport
+              hospitals={hospitals}
+              searchQuery={filters.query || "all"}
+            />
+            <ShareLink filters={filters} />
+            <EmailShare hospitals={hospitals} />
+            
+            {/* Divider Line */}
+            <div className="w-px h-6 bg-gray-300 mx-1"></div>
+            
+            {/* Auth Buttons */}
+            <Link 
+              href="/auth/login" 
+              className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Sign In</span>
+            </Link>
+            <Link 
+              href="/auth/signup" 
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Sign Up</span>
+            </Link>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
       <main className="container mx-auto px-4 py-8">
         {/* Search Section */}
